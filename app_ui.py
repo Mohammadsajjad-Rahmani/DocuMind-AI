@@ -8,7 +8,6 @@ st.set_page_config(page_title="DocuMind AI", page_icon="📄", layout="wide")
 st.title("📄 DocuMind AI - پردازش و پرسش از مستندات")
 st.caption("سامانه هوشمند خلاصه‌سازی و RAG بر پایه TF-IDF و Cosine Similarity")
 
-# ذخیره متن مستند در Session State
 if "document_text" not in st.session_state:
     st.session_state.document_text = ""
 if "summary" not in st.session_state:
