@@ -1,0 +1,28 @@
+[project]
+name = "documind-ai"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Mohammadsajjad", email = "mohammadsajjadmail@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]",
+    "uvicorn",
+    "pypdf",
+    "scikit-learn",
+    "streamlit",
+    "requests",
+    "pydantic",
+    "python-multipart>=0.0.32",
+    "pdfplumber>=0.11.10",
+    "sentence-transformers>=6.1.0",
+]
+
+[project.scripts]
+documind-ai = "documind_ai:main"
+
+[build-system]
+requires = ["uv_build>=0.12.3,<0.13.0"]
+build-backend = "uv_build"
