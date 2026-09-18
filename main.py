@@ -15,7 +15,6 @@ async def extract_text_from_pdf(file: UploadFile = File(...)):
         content = await file.read()
         extracted_text = ""
         
-        # استفاده از pdfplumber جهت استخراج دقیق متن و جدول‌ها
         with pdfplumber.open(io.BytesIO(content)) as pdf:
             for page in pdf.pages:
                 text = page.extract_text()
