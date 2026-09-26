@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from schemas import DocumentInput, SummaryResponse, QueryInput, QueryResponse
 from rag_engine import doc_engine
 import pdfplumber
@@ -15,13 +16,17 @@ async def extract_text_from_pdf(file: UploadFile = File(...)):
         content = await file.read()
         extracted_text = ""
         
-        with pdfplumber.open(io.BytesIO(content)) as pdf:
-            for page in pdf.pages:
-                text = page.extract_text()
-                if text:
-                    extracted_text += text + "\n"
-        
-        extracted_text = extracted_text.strip()
+        # پردازش IO-bound در پروسه ناهمگام
+        def parse_pdf():
+            nonlocal extracted_text
+            with pdfplumber.open(io.BytesIO(content)) as pdf:
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    if text:
+                        extracted_text += text + "\n"
+            return extracted_text.strip()
+
+        extracted_text = await run_in_threadpool(parse_pdf)
         
         if not extracted_text:
             raise HTTPException(
@@ -37,17 +42,19 @@ async def extract_text_from_pdf(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"خطا در پردازش فایل: {str(e)}")
 
 @app.post("/summarize", response_model=SummaryResponse)
-def summarize_document(data: DocumentInput):
+async def summarize_document(data: DocumentInput):
     if not data.text.strip():
         raise HTTPException(status_code=400, detail="متن ورودی خالی است.")
     
-    summary, total_chunks = doc_engine.generate_summary(data.text)
+    summary, total_chunks = await run_in_threadpool(doc_engine.generate_summary, data.text)
     return SummaryResponse(summary=summary, total_chunks=total_chunks)
 
 @app.post("/query", response_model=QueryResponse)
-def query_document(data: QueryInput):
+async def query_document(data: QueryInput):
     if not data.document_text.strip() or not data.question.strip():
         raise HTTPException(status_code=400, detail="متن مستند یا سوال نمی‌تواند خالی باشد.")
     
-    answer, relevant_chunks = doc_engine.answer_question(data.question, data.document_text)
+    answer, relevant_chunks = await run_in_threadpool(
+        doc_engine.answer_question, data.question, data.document_text
+    )
     return QueryResponse(answer=answer, relevant_chunks=relevant_chunks)
